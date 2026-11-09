@@ -28,7 +28,7 @@ RUN if [ "$BUILD_PX4" = "1" ]; then \
 
 # ROS 2 <-> Gazebo Harmonic bridge (needs the OSRF repo added by ubuntu.sh above).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ros-jazzy-ros-gzharmonic \
+      ros-jazzy-ros-gz \
     && rm -rf /var/lib/apt/lists/*
 
 # The base image ships a non-root `ubuntu` user (uid 1000); give it PX4 and sudo.

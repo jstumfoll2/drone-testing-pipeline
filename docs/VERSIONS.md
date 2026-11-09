@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | Ubuntu | 24.04 LTS | `.devcontainer/Dockerfile` base image |
 | ROS 2 | Jazzy | `.devcontainer/Dockerfile` (`ros:jazzy`) |
-| Gazebo | Harmonic (via `ros-jazzy-ros-gzharmonic`) | `.devcontainer/Dockerfile` |
+| Gazebo | Harmonic (via `ros-jazzy-ros-gz`, the default Gazebo pairing for Jazzy) | `.devcontainer/Dockerfile` |
 | PX4-Autopilot | `v1.17.0` | `scripts/setup_px4.sh` (`PX4_VERSION`) |
 | px4_msgs | `release/1.17` | `dtp.repos` |
 | px4-ros2-interface-lib | `release/1.17` | `dtp.repos` |
