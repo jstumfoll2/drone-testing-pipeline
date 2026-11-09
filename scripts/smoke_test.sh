@@ -41,7 +41,25 @@ set -e
 if [ "$RC" -eq 0 ]; then
   echo "SMOKE TEST PASSED"
 else
-  echo "SMOKE TEST FAILED (exit $RC). Last sim log lines:"
-  tail -n 60 "$LOG_DIR/sim.log"
+  # Collect diagnostics while the sim is still up (CI logs may be the only
+  # place they can be read).
+  echo "SMOKE TEST FAILED (exit $RC)"
+  PX4_BIN="$(eval echo "${PX4_DIR:-$HOME/PX4-Autopilot}")/build/px4_sitl_default/bin"
+  if [ -x "$PX4_BIN/px4-commander" ]; then
+    echo "=== PX4 pre-flight checks ==="
+    (cd "$PX4_BIN/.." && timeout 10 "$PX4_BIN/px4-commander" check 2>&1) || true
+    sleep 2
+    grep -v '^\[microxrce_agent' "$LOG_DIR/sim.log" | tail -n 30 || true
+  fi
+  echo "=== Gazebo topics ==="
+  timeout 10 gz topic -l 2>&1 | head -60 || true
+  echo "=== ROS topics ==="
+  timeout 10 ros2 topic list 2>&1 | grep -v '^/fmu/' || true
+  echo "=== PX4 / Gazebo / bridge warnings and errors ==="
+  grep -v '^\[microxrce_agent' "$LOG_DIR/sim.log" \
+    | grep -Ei 'warn|error|fail|preflight|arming|camera|render|ogre|egl|gl ' \
+    | grep -v 'successfully created' | tail -n 120 || true
+  echo "=== Last sim log lines (agent filtered) ==="
+  grep -v '^\[microxrce_agent' "$LOG_DIR/sim.log" | tail -n 60 || true
 fi
 exit "$RC"
