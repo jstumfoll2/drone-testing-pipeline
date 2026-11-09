@@ -44,7 +44,7 @@ def _scenario_defaults(name: str):
 def _launch_setup(context, *args, **kwargs):
     cfg = {k: LaunchConfiguration(k).perform(context) for k in (
         "scenario", "vehicle", "world", "px4_dir", "headless", "start_agent", "start_px4",
-        "use_sim_time", "camera_gz_topic", "agent_port")}
+        "use_sim_time", "camera_gz_topic", "agent_port", "require_gcs")}
     overrides = _scenario_defaults(cfg["scenario"])
     vehicle = overrides.get("vehicle", cfg["vehicle"])
     world = overrides.get("world", cfg["world"])
@@ -64,6 +64,11 @@ def _launch_setup(context, *args, **kwargs):
         if not os.path.isdir(px4_dir):
             raise RuntimeError(f"PX4 not found at {px4_dir}; run scripts/setup_px4.sh or set px4_dir")
         env = {"PX4_GZ_WORLD": world}
+        if cfg["require_gcs"].lower() != "true":
+            # PX4 v1.17 refuses to arm without a ground station link while the
+            # datalink-loss failsafe (NAV_DLL_ACT) is enabled. Automated sim
+            # runs have no QGroundControl, so turn that failsafe off here only.
+            env["PX4_PARAM_NAV_DLL_ACT"] = "0"
         if cfg["headless"].lower() == "true":
             env["HEADLESS"] = "1"
         actions.append(ExecuteProcess(
@@ -71,7 +76,7 @@ def _launch_setup(context, *args, **kwargs):
             name="px4_sitl", output="screen"))
 
     cam = cfg["camera_gz_topic"] or (
-        f"/world/{world}/model/{model}/link/camera_link/sensor/camera")
+        f"/world/{world}/model/{model}/link/camera_link/sensor/imager")  # mono_cam's sensor name
     bridge_args = [
         f"{cam}/image@sensor_msgs/msg/Image[gz.msgs.Image",
         f"{cam}/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",
@@ -127,6 +132,8 @@ def generate_launch_description():
                               description="false to attach to an already running PX4/Gazebo"),
         DeclareLaunchArgument("use_sim_time", default_value="true"),
         DeclareLaunchArgument("agent_port", default_value="8888"),
+        DeclareLaunchArgument("require_gcs", default_value="false",
+                              description="true keeps PX4's GCS-link arming check (use with QGroundControl)"),
         DeclareLaunchArgument("camera_gz_topic", default_value="",
                               description="override the Gazebo camera topic prefix (see `gz topic -l`)"),
         OpaqueFunction(function=_launch_setup),
