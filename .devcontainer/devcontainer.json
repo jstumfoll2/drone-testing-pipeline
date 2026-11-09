@@ -1,0 +1,35 @@
+{
+  "name": "drone-testing-pipeline (Jazzy + Harmonic + PX4 v1.17)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": { "PX4_VERSION": "v1.17.0", "BUILD_PX4": "1" }
+  },
+  "remoteUser": "ubuntu",
+  "workspaceFolder": "/workspaces/drone-testing-pipeline",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/drone-testing-pipeline,type=bind",
+  "runArgs": [
+    "--network=host",
+    "--ipc=host",
+    // GPU rendering for Gazebo; remove on machines without the NVIDIA Container Toolkit.
+    "--gpus=all",
+    "--env=DISPLAY",
+    "--env=NVIDIA_DRIVER_CAPABILITIES=all",
+    "--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw"
+  ],
+  "containerEnv": {
+    "ROS_DOMAIN_ID": "0",
+    "PX4_DIR": "/opt/PX4-Autopilot"
+  },
+  "postCreateCommand": "bash scripts/bootstrap_ws.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-iot.vscode-ros",
+        "redhat.vscode-yaml"
+      ]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# Phase 1 baseline: calm conditions, marker under the take-off point.
+# Paper reference: within 5 cm landing error indoors.
+name: v1_calm_center
+vehicle: x500_mono_cam_down
+world: aruco
+marker:
+  position: [0.0, 0.0, 0.0]
+  length_m: 0.5
+takeoff_altitude_m: 5.0
+tags: [sil, landing, calm]
+thresholds:
+  max_landing_error_m: 0.05
+  timeout_s: 120
+  min_detection_rate: 0.8

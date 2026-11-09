@@ -1,0 +1,14 @@
+# Gate 0 smoke test: PX4's own precision-landing world with the down-camera quad.
+# Only checks that the stack comes up and the marker is seen; no landing yet.
+name: smoke_aruco
+vehicle: x500_mono_cam_down
+world: aruco
+marker:
+  position: [0.0, 0.0, 0.0]
+  length_m: 0.5
+  marker_id: 0
+  dictionary: DICT_4X4_50
+takeoff_altitude_m: 5.0
+tags: [smoke, gate0]
+thresholds:
+  timeout_s: 180

@@ -1,0 +1,19 @@
+# Pinned third-party sources for the ROS 2 workspace.
+# Import with:  vcs import drone_ws/src < dtp.repos
+#
+# Versions follow PX4 v1.17 (stable, May 2026). px4_msgs and the interface
+# library must match the PX4 firmware's message definitions; bump all three
+# together (see docs/VERSIONS.md).
+repositories:
+  third_party/px4_msgs:
+    type: git
+    url: https://github.com/PX4/px4_msgs.git
+    version: release/1.17
+  third_party/px4-ros2-interface-lib:
+    type: git
+    url: https://github.com/Auterion/px4-ros2-interface-lib.git
+    version: release/1.17
+  third_party/Micro-XRCE-DDS-Agent:
+    type: git
+    url: https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
+    version: v2.4.3
