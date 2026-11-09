@@ -18,15 +18,17 @@ if command -v rosdep >/dev/null; then
     --skip-keys "px4_msgs px4_ros2_cpp px4_ros2_py" || true
 fi
 
-# The PX4 ROS 2 interface library is not used until Phase 1 (landing mode),
-# and px4_ros2_cpp currently fails to configure in an isolated colcon install
-# (ament_index_get_resource cannot find px4_msgs' rosidl_interfaces). Skip it
-# by default; set DTP_BUILD_INTERFACE_LIB=1 to build it.
-SKIP=()
+# The PX4 ROS 2 interface library (and its example packages) is not used
+# until Phase 1 (landing mode), and px4_ros2_cpp currently fails to configure
+# in an isolated colcon install (ament_index_get_resource cannot find
+# px4_msgs' rosidl_interfaces). By default build only our packages, their
+# dependencies and the XRCE-DDS agent; set DTP_BUILD_INTERFACE_LIB=1 to build
+# everything.
+SELECT=()
 if [[ "${DTP_BUILD_INTERFACE_LIB:-0}" != "1" ]]; then
-  SKIP=(--packages-skip px4_ros2_cpp px4_ros2_py)
+  SELECT=(--packages-up-to dtp_bringup microxrcedds_agent)
 fi
 
 cd "$WS"
-colcon build --symlink-install "${SKIP[@]}" --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo "$@"
+colcon build --symlink-install "${SELECT[@]}" --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo "$@"
 echo "Workspace built. Run: source $WS/install/setup.bash"
