@@ -24,6 +24,23 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
+# Set NAV_DLL_ACT=0 through PX4's shell client, re-checking until the value
+# sticks (the airframe script may run after the first attempt).
+_DISABLE_DLL_FAILSAFE = """
+ok=0
+for _ in $(seq 90); do
+  sleep 2
+  if [ "$(bin/px4-param show -q NAV_DLL_ACT 2>/dev/null | tr -d '[:space:]')" = "0" ]; then
+    ok=$((ok + 1)); [ "$ok" -ge 3 ] && { echo "[dtp] NAV_DLL_ACT=0 (no GCS required)"; exit 0; }
+  else
+    ok=0; bin/px4-param set NAV_DLL_ACT 0 >/dev/null 2>&1 || true
+  fi
+done
+echo "[dtp] could not set NAV_DLL_ACT=0; PX4 may refuse to arm without a GCS" >&2
+exit 1
+"""
+
+
 def _scenario_defaults(name: str):
     """Load vehicle/world/marker settings from a dtp_test scenario, if one is named."""
     if not name:
@@ -64,16 +81,23 @@ def _launch_setup(context, *args, **kwargs):
         if not os.path.isdir(px4_dir):
             raise RuntimeError(f"PX4 not found at {px4_dir}; run scripts/setup_px4.sh or set px4_dir")
         env = {"PX4_GZ_WORLD": world}
-        if cfg["require_gcs"].lower() != "true":
-            # PX4 v1.17 refuses to arm without a ground station link while the
-            # datalink-loss failsafe (NAV_DLL_ACT) is enabled. Automated sim
-            # runs have no QGroundControl, so turn that failsafe off here only.
-            env["PX4_PARAM_NAV_DLL_ACT"] = "0"
         if cfg["headless"].lower() == "true":
             env["HEADLESS"] = "1"
         actions.append(ExecuteProcess(
             cmd=["make", "px4_sitl", target], cwd=px4_dir, additional_env=env,
             name="px4_sitl", output="screen"))
+        if cfg["require_gcs"].lower() != "true":
+            # PX4 v1.17 refuses to arm without a ground station link while the
+            # datalink-loss failsafe (NAV_DLL_ACT) is enabled, and the x500
+            # airframe enables it. Automated sim runs have no QGroundControl,
+            # so turn it off once PX4 is up. Setting PX4_PARAM_NAV_DLL_ACT=0
+            # in the environment did not stick in testing, most likely because
+            # 0 equals the compiled default and the airframe's
+            # `param set-default NAV_DLL_ACT 2` then wins.
+            actions.append(ExecuteProcess(
+                cmd=["bash", "-c", _DISABLE_DLL_FAILSAFE],
+                cwd=os.path.join(px4_dir, "build", "px4_sitl_default"),
+                name="px4_no_gcs", output="screen"))
 
     cam = cfg["camera_gz_topic"] or (
         f"/world/{world}/model/{model}/link/camera_link/sensor/imager")  # mono_cam's sensor name
