@@ -88,6 +88,12 @@ def dictionary_from_name(name: str):
     return cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, name))
 
 
+# Sub-pixel corner search half-window. OpenCV's default (5) spans more than
+# one bit cell on a distant marker (a 4x4 tag is 6 cells across, so ~5 px per
+# cell at 8 m on the sim camera) and biases the corners outward.
+_CORNER_WIN = 3
+
+
 class ArucoPoseEstimator:
     """Detect ArUco markers in an image and estimate each marker's pose."""
 
@@ -114,10 +120,19 @@ class ArucoPoseEstimator:
         if hasattr(cv2.aruco, "ArucoDetector"):  # OpenCV >= 4.7
             params = cv2.aruco.DetectorParameters()
             params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+            params.cornerRefinementWinSize = _CORNER_WIN
             detector = cv2.aruco.ArucoDetector(dictionary, params)
             return detector.detectMarkers
         params = cv2.aruco.DetectorParameters_create()  # OpenCV <= 4.6
         params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+        params.cornerRefinementWinSize = _CORNER_WIN
+        # OpenCV <= 4.6 drops the smaller of two nested candidates that are
+        # closer than this rate (default 0.05). A marker with a white quiet
+        # zone on a darker floor, as in PX4's aruco world, then loses to its
+        # own quiet-zone square and is never decoded. 4.7+ keeps both.
+        # Lowering the rate lets duplicates of one marker through; detect()
+        # keeps the best of each id.
+        params.minMarkerDistanceRate = 0.01
         return lambda img: cv2.aruco.detectMarkers(img, dictionary, parameters=params)
 
     def update_camera(
@@ -160,8 +175,13 @@ class ArucoPoseEstimator:
                     reprojection_error_px=err,
                 )
             )
-        observations.sort(key=lambda o: o.distance_m)
-        return observations
+        # One observation per id: OpenCV can return near-duplicate contours of
+        # the same marker; keep the one that fits the square model best.
+        best = {}
+        for o in observations:
+            if o.marker_id not in best or o.reprojection_error_px < best[o.marker_id].reprojection_error_px:
+                best[o.marker_id] = o
+        return sorted(best.values(), key=lambda o: o.distance_m)
 
 
 def camera_matrix_from_fov(width: int, height: int, horizontal_fov_rad: float) -> np.ndarray:
