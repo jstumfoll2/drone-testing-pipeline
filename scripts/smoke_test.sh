@@ -30,7 +30,10 @@ cleanup() {
 trap cleanup EXIT
 
 set +e
-timeout "$TIMEOUT" ros2 run dtp_test smoke_flight --ros-args -p timeout_s:="$((TIMEOUT - 20))" \
+# PYTHONNOUSERSITE: ignore the NumPy 2 that PX4's setup pip-installs into
+# ~/.local (see sim.launch.py). timeout_s is a double parameter, hence ".0".
+PYTHONNOUSERSITE=1 timeout "$TIMEOUT" ros2 run dtp_test smoke_flight \
+  --ros-args -p timeout_s:="$((TIMEOUT - 20)).0" \
   2>&1 | tee "$LOG_DIR/smoke_flight.log"
 RC=${PIPESTATUS[0]}
 set -e

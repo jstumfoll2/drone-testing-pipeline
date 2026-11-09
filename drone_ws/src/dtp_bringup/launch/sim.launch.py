@@ -100,6 +100,10 @@ def _launch_setup(context, *args, **kwargs):
     actions.append(Node(
         package="dtp_perception", executable="marker_detector", name="marker_detector",
         output="screen",
+        # PX4's Tools/setup/ubuntu.sh pip-installs NumPy 2 into ~/.local, which
+        # breaks Ubuntu's python3-opencv (built against NumPy 1). Keep the
+        # user site out of our Python nodes so they use the system packages.
+        additional_env={"PYTHONNOUSERSITE": "1"},
         parameters=[detector_params, marker_overrides, {"use_sim_time": use_sim_time}],
         remappings=[
             ("image", "/dtp/cam_down/image_raw"),
