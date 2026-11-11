@@ -1,0 +1,13 @@
+# Phase 1/4: PX4's windy world. Paper reference: about 15 cm outdoors, mostly wind.
+# The windy world has no marker yet; it becomes a generated world (custom_world) in phase 1.
+name: v1_windy
+vehicle: x500_mono_cam_down
+world: windy
+marker:
+  position: [0.0, 0.0, 0.0]
+  length_m: 0.5
+takeoff_altitude_m: 5.0
+tags: [sil, landing, wind, todo_world]
+thresholds:
+  max_landing_error_m: 0.15
+  timeout_s: 150

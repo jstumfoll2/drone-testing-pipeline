@@ -1,0 +1,16 @@
+# colcon
+drone_ws/build/
+drone_ws/install/
+drone_ws/log/
+# vcs-imported sources (see dtp.repos)
+drone_ws/src/third_party/
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+# test output
+results/
+*.bag
+*.mcap

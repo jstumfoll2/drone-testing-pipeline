@@ -1,0 +1,8 @@
+# PX4's Gazebo `aruco` world: one DICT_4X4_50 marker, id 0, filling a 0.5 m square
+# (checked against PX4-gazebo-models/models/arucotag).
+marker_detector:
+  ros__parameters:
+    dictionary: DICT_4X4_50
+    marker_length_m: 0.5
+    target_id: 0
+    publish_debug_image: false
